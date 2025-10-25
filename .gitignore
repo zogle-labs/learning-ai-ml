@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.db
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# Virtual environment
+learning-venv/
+venv/
+env/
+
+# Model files
+*.h5
+*.pkl
+*.pt
+*.ckpt
+*.sav
+
+# Logs
+*.log
+
+# Datasets (if you don't want to track large datasets)
+data/
