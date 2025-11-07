@@ -1,0 +1,172 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Live Logs</title>
+  <style>
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, monospace;
+      background: #ffffff;
+      color: #000000;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      font-weight: 600;
+      margin: 0 0 12px 0;
+    }
+
+    #controls {
+      margin-bottom: 10px;
+    }
+
+    #logbox {
+      height: 70vh;
+      overflow: auto;
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .entry {
+      margin: 4px 0;
+      white-space: pre-wrap;
+      font-size: 13px;
+    }
+
+    .ts {
+      opacity: 0.6;
+      margin-right: 8px;
+    }
+
+    .INFO {
+      color: #003006;
+    }
+
+    .WARN {
+      color: #664400;
+    }
+
+    .ERROR {
+      color: #ff7b7b;
+      font-weight: 600;
+    }
+
+    .DEBUG {
+      color: #09265a;
+    }
+
+    #status {
+      font-size: 13px;
+      opacity: 0.8;
+      margin-left: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🚀 Diabetes Project Logs</h1>
+  <div id="controls">
+    <label>Stream: <strong>/logs</strong></label>
+    <span id="status">connecting...</span>
+  </div>
+  <div id="logbox"></div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const logbox = document.getElementById('logbox');
+    
+    const es = new EventSource('/logs');
+    es.onopen = () => { statusEl.textContent = 'connected'; };
+    es.onerror = (e) => { statusEl.textContent = 'disconnected - retrying'; };
+
+    // function addLog(entry) {
+    //   const div = document.createElement('div');
+    //   div.className = 'entry ' + (entry.level || 'INFO');
+    //   const ts = document.createElement('span');
+    //   ts.className = 'ts';
+    //   ts.textContent = entry.ts ? '[' + entry.ts + ']' : '';
+    //   const lvl = document.createElement('span');
+    //   lvl.className = 'lvl';
+    //   lvl.textContent = (entry.level || 'INFO') + ' ';
+    //   const msg = document.createElement('span');
+    //   msg.textContent = entry.msg || JSON.stringify(entry);
+    //   const lineBreak = document.createElement('br')
+    //   div.appendChild(ts);
+    //   div.appendChild(lvl);
+    //   div.appendChild(lineBreak)
+    //   div.appendChild(msg);
+    //   logbox.appendChild(div);
+    //   // auto-scroll
+    //   logbox.scrollTop = logbox.scrollHeight;
+    // }
+
+    es.onmessage = (event) => {
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch (err) {
+        // fallback for non-JSON messages
+        const divErr = document.createElement('pre');
+        divErr.className = 'entry ERROR';
+        divErr.textContent = '[ERROR] Bad JSON: ' + event.data;
+        logbox.appendChild(divErr);
+        logbox.scrollTop = logbox.scrollHeight;
+        return;
+      }
+
+      // If sender provided `html`, render it as HTML (useful for df.to_html()).
+      // Only do this if you trust the sender (it's your ML code). Otherwise avoid innerHTML.
+      if (data.html) {
+
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'entry INFO';
+        // optional small header with level + ts
+        const header = document.createElement('div');
+        header.className = 'ts';
+        header.textContent = (data.ts ? '[' + data.ts + '] ' : '') + (data.level || 'INFO');
+        wrapper.appendChild(header);
+
+        const tableWrap = document.createElement('div');
+        // IMPORTANT: only use innerHTML if you trust the source (your own server).
+        tableWrap.innerHTML = data.html;
+        wrapper.appendChild(tableWrap);
+        logbox.appendChild(wrapper);
+        logbox.scrollTop = logbox.scrollHeight;
+        return;
+      }
+
+      // If the message has multiline content, show in <pre> to preserve spacing
+      const msg = data.msg ?? JSON.stringify(data);
+      if (msg.includes('\n')) {
+        const pre = document.createElement('pre');
+        pre.className = 'entry ' + (data.level || 'INFO');
+        pre.textContent = (data.ts ? '[' + data.ts + '] ' : '') + '[' + (data.level || 'INFO') + '] ' + '\n' + msg;
+        logbox.appendChild(pre);
+      } else {
+        // single-line: normal div, small timestamp + message
+        const div = document.createElement('div');
+        div.className = 'entry ' + (data.level || 'INFO');
+        const tsSpan = document.createElement('span');
+        tsSpan.className = 'ts';
+        tsSpan.textContent = data.ts ? '[' + data.ts + '] ' : '';
+        const lvlSpan = document.createElement('strong');
+        lvlSpan.textContent = (data.level ? '[' + data.level + '] ' : '');
+        const msgSpan = document.createElement('span');
+        msgSpan.textContent = msg;
+        div.appendChild(tsSpan);
+        div.appendChild(lvlSpan);
+        div.appendChild(msgSpan);
+        logbox.appendChild(div);
+      }
+
+      logbox.scrollTop = logbox.scrollHeight;
+    };
+  </script>
+</body>
+
+</html>
