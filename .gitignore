@@ -9,7 +9,7 @@ __pycache__/
 .ipynb_checkpoints
 
 # Virtual environment
-learning-venv/
+master-env/
 venv/
 env/
 
